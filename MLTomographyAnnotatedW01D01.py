@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug  2 14:30:55 2021
+Created on Mon Aug  2 20:17:58 2021
 
 @author: thoma
 """
@@ -15,7 +15,7 @@ Created on Mon Aug  2 14:30:55 2021
 #
 #
 ##############################################################################
-#01/12 Import Section
+#01/14 Import Section
 ##############################################################################
 
 #The import system in python gains access to modules by searching for them
@@ -38,127 +38,134 @@ import tensorflow as tf
 
 from tensorflow.keras import layers
 
-#Keras is the deep learning API ("Application Programming Interface") now
-#packaged within Tensorflow. The layers import forms the foundation for
-#creating a neural network using Keras.
-
-from tensorflow.keras.layers.experimental import preprocessing
-
 #Keras data pre-processing is a tool needed to train a model from raw data
 #when using Keras.
 
 ##############################################################################
-#End 01/12 Import Section
+#End 01/14 Import Section
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#02/12 Data Load and Reshape
+#02/14 Data Load and Reshape
 ##############################################################################
 
-opticsParams = np.loadtxt('TrainingDataY.txt',delimiter=',')
-sinograms = np.loadtxt('TrainingDataX.txt',delimiter=',');
+phaseSpace = np.loadtxt('TrainingDataYTomography.txt',delimiter=',')
+sinograms = np.loadtxt('TrainingDataXTomography.txt',delimiter=',');
 
 #Data created in MATLAB is compiled in a text file and loaded in using Numpys
 #load.txt function where the boundary between characters is specified by the
 #delimiter. Two variables are created as Numpy arrays from the data.
 
-nimage = opticsParams.shape[0];
+nimage = phaseSpace.shape[0];
 
-#Created a new variable of size 1 with a value of 6000, the same size as the
+#Created a new variable of size 1 with a value of 3500, the same size as the
 #amount of samples in the opticsParams variable.
 
-sinograms = sinograms[:,np.newaxis,:,np.newaxis].reshape((nimage,24,-1,1));
+sinograms = sinograms[:,np.newaxis,:,np.newaxis].reshape((nimage,48,-1,1));
 
-#Reshapes the sinograms array from a 1x2 array of value (144000,48) to a 1x4
-#array of value (6000,24,48,1) user specified and now in line also with the
+#Reshapes the sinograms array from a 1x2 array of value (168000,48) to a 1x4
+#array of value (3500,48,48,1) user specified and now in line also with the
 #size of nimage and thus the sample size of the opticsParams variable.
 
 print(sinograms.shape)
-print(opticsParams.shape)
+print(phaseSpace.shape)
 
 #Debug code to print the shapes of the Numpy arrays.
 
 ##############################################################################
-#End 02/12 Data Load and Reshape
+#End 02/14 Data Load and Reshape
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#03/12 Figure Plots
+#03/14 Figure Plots
 ##############################################################################
 
 fig = plt.figure(figsize=(16,5))
 
 #Defines a figure plot variable with user specified dimensions of 16x5.
 
-for i in range(32):
-    sub = fig.add_subplot(4, 8, i + 1)
+for i in range(24):
+    sub = fig.add_subplot(3, 8, i + 1)
     sub.imshow(sinograms[i], interpolation='nearest')
     plt.xticks([])
     plt.yticks([])
-
-#A for loop with a length of 32 repetitions that generates 32 sub plots in to
-#a single figure with dimensions of 8x4 showing the sinograms data. This data
+    
+#A for loop with a length of 24 repetitions that generates 24 sub plots in to
+#a single figure with dimensions of 8x3 showing the sinograms data. This data
 #is displayed as a kind of heat map where the brighter parts of the image
 #denote a higher density.
 
+#These graphs are smeared in appearance as they are yet to be stitched together
+#to form a useful image of the beam.
+
 ##############################################################################
-#End 03/12 Figure Plots
+#End 03/14 Figure Plots
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#04/12 Optics Scale
+#04/14 Figure Plots Continued
 ##############################################################################
 
-opticsScale = np.diag([1.0, 1.0, -5.0])
+fig = plt.figure(figsize=(16,5))
 
-#Defines a new variable opticsScale as a Numpy array and sets its values.
+#Defines another figure plot variable with user specified dimensions of 16x5.
 
-print(opticsScale)
+for i in range(24):
+    sub = fig.add_subplot(3, 8, i + 1)
+    sub.imshow(phaseSpace[i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    plt.yticks([])
+    
+#The same 24 repetition for loop this time used for the phaseSpace dataset.
 
-#Debug code to print the Numpy array.
+#These graphs show the fully analysied versions of the previous figures
+#computationally stitched together to accuratley reprisent the cross section
+#of the beam in the x-axis of phase space.
 
 ##############################################################################
-#End 04/12 Optics Scale
+#End 04/14 Figure Plots Continued
 ############################################################################## 
 #
 #
 #
 ##############################################################################
-#05/12 The Test-Train Split
+#05/14 The Test-Train Split
 ##############################################################################
 
 #The Test-Train split is a crucial part of the machine learning process,
 #removing a chunk of unbiased data as a test sample that is independent of the
 #network to use later to test the networks performance.
 
-n_test = 1000;
+n_test = 500;
 
-#Defines the amount of samples in the test dataset, 1000 in this case, leaving
-#5000 for training.
+#Defines the amount of samples in the test dataset, 500 in this case, leaving
+#3000 for training.
+
+psScale = 1000;
+
+#New variable psScale with a value of 1000. 
 
 x_test = sinograms[:n_test,:,:,:];
 
-#New variable x_test geerated from the first 1000 samples of the variable
+#New variable x_test geerated from the first 500 samples of the variable
 #sinograms.
 
 
-y_test = np.matmul(opticsParams[:n_test,:],opticsScale);
+y_test = phaseSpace[:n_test,:]/psScale;
 
-#Same for y_test as for x_test using the numpy matrix multiplication function
-#for the first 1000 samples.
+#Same procedure for y_test which is divided by psScale.
 
 x_train = sinograms[n_test:,:,:,:];
-y_train = np.matmul(opticsParams[n_test:,:],opticsScale);
+y_train = phaseSpace[n_test:,:]/psScale;
 
-#Same again for the new variables x_train and y_train which both recieve the
-#last 5000 samples for training. This affords around 17% of the total data
-#to be used at the end to test the network performance.
+#The two training samples recieve the same procedure also but for the final
+#3000 of the samples.
 
 print(x_test.shape)
 print(x_train.shape)
@@ -166,13 +173,13 @@ print(x_train.shape)
 #Debug code printing the shapes of the x_test and x_train arrays.
 
 ##############################################################################
-#End 05/12 The Test-Train Split
+#End 05/14 The Test-Train Split
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#06/12 Model Creation
+#06/14 Model Creation
 ##############################################################################
 
 #Creation of the neural network architecture.
@@ -180,10 +187,10 @@ print(x_train.shape)
 linear_model = tf.keras.Sequential([
     layers.BatchNormalization(input_shape=x_test.shape[1:]),
     layers.Flatten(),
-    layers.Dense(200),
-    layers.Dense(200),
-    layers.Dense(200),
-    layers.Dense(3,activation='linear')
+    layers.Dense(300),
+    layers.Dense(300),
+    layers.Dense(300),
+    layers.Dense(2304,activation='linear')
 ])
 
 #BatchNormalization transforms the data to a mean close to zero and a standard
@@ -191,47 +198,59 @@ linear_model = tf.keras.Sequential([
 
 #layers.Flatten, flattens the input without affecting the batch size.
 
-#3 200 neuron layers dense layers are created. Dense layers are fully
+#3 300 neuron layers dense layers are created. Dense layers are fully
 #connected wuith each neuron connected to all of the previous and following
 #neurons.
 
-#A final 3 neuron layer to focus in on the 3 desired outputs. The beam
-#emittance and the alpha and beta Twiss parameters.
+#A final 2304 neuron layer to generate the desired output.
 
 #Linear activation function reprisented by the line y=x that intersects at
 #the origin.
 
 ##############################################################################
-#End 06/12 Mocel Creation
+#End 06/14 Mocel Creation
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#07/12 Pre Model Predictions and Imaging
+#07/14 Initial Figure Creation
 ##############################################################################
 
-mlpredict0 = linear_model.predict(x_test)
+test_set = 10 + np.arange(6);
 
-#Using the model.predict function to generate predictions for the expected
-#outputs of the neural network for the 3 desired outputs.
+#np.arange integers from 0 to 5.
 
-plt.plot(y_test[:,0],mlpredict0[:,0],'.');
-plt.plot(y_test[:,1],mlpredict0[:,1],'.');
-plt.plot(y_test[:,2],mlpredict0[:,2],'.');
+mlpredict = linear_model.predict(x_test[test_set])
 
-#A plot of these 3 outputs on the same graph. This currently doesn't show in
-#Spyder so as I begin to edit I will add a plt.show here to visualaise this
-#graph in Spyder.
+#Forming initial predictions on the x-axis test data set
+
+fig = plt.figure(figsize=(16,5))
+
+#Make a plot with a 16x5 aspect ratio.
+
+for i in range(6):
+    sub = fig.add_subplot(2, 6, i + 1)
+    sub.imshow(y_test[test_set[0]+i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    plt.yticks([])
+    sub = fig.add_subplot(2, 6, i + 7)
+    sub.imshow(mlpredict[i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    plt.yticks([])
+
+#A for loop for a 12 sub-plot figure in a 2x6 arrangment.
+
+#The plots compare the initial predictions from the actual phase space images.
 
 ##############################################################################
-#End 07/12 Pre Model Predictions and Imaging
+#End 07/14 Initial Figure Creation
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#08/12 Model Compiler
+#08/14 Model Compiler
 ##############################################################################
 
 #The moedel.compile function to configure the model for training with the
@@ -239,137 +258,179 @@ plt.plot(y_test[:,2],mlpredict0[:,2],'.');
 
 linear_model.compile(
     optimizer=tf.optimizers.Adam(learning_rate=0.1e-3),
-    loss='mean_squared_error')
+    loss='mean_absolute_error')
 
 ##############################################################################
-#End 08/12 Model Compiler
+#End 08/14 Model Compiler
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#09/12 Running The Model
+#09/14 Running The Model
 ##############################################################################
 
 #The model.fit function begins the training of the model. 
 
-#The number of itterations is set to 30 with a batch size per epoch of 50
+#The number of itterations is set to 30 with a batch size per epoch of 20
 #which should yield a quick training cycle.
 
 history = linear_model.fit(
     x_train, y_train, 
     epochs=30,
-    batch_size=50,
+    batch_size=20,
     # suppress logging
+    verbose=1,
     
 #Verbose=1 to show progress animations without excessive logging readout.
     
-    verbose=1,
     # Calculate validation results on 20% of the training data
     validation_split = 0.2)
 
-#20% validation split so 1000 units of the 5000 large train data set is used
+#20% validation split so 600 units of the 3000 large train data set is used
 #to validate this supervised learning neural network. This split is optimal as
 #the test data has already been removed prior to this split essentially
 #yielding two independent validations from which to monitor the networks
 #performance.
 
 ##############################################################################
-#End 09/12 Running The Model
+#End 09/14 Running the Model
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#10/12 Post Model Predictions and Imaging
+#10/14 Post Model Imaging
 ##############################################################################
 
-#Code to compile the neural network output into charts and graphs.
+test_set = 50 + np.arange(6);
 
-mlpredict = linear_model.predict(x_test)
-fig, ax = plt.subplots(nrows=2,ncols=3,figsize=(14,8))
+#Using np.arrange to take integer values from 50 to 55.
 
-#Code that defines the figure as 6 plots with 2 rows and 3 columns with a 14x8
-#aspect ratio.
+mlpredict = linear_model.predict(x_test[test_set])
 
-#The first three figure plots show the true values of the 3 neural network 
-#outputs as a function of the neural network output using only the test data
-#which thus far the network has not seen to determine wether both
-#sets of data are in agreement with one another.
+#Repeating predictions now the model has been trained.
 
-#Plot 1 for emittance.
+fig = plt.figure(figsize=(16,5))
 
-ax[0,0].plot(y_test[:,0],mlpredict[:,0],'.');
-ax[0,0].set_xlabel('True emittance');
-ax[0,0].set_ylabel('Fitted emittance');
+#Make a plot with a 16x5 aspect ratio.
 
-#Plot 2 for the Twiss parameter Beta.
-
-ax[0,1].plot(y_test[:,1],mlpredict[:,1],'.');
-ax[0,1].set_xlabel('True beta');
-ax[0,1].set_ylabel('Fitted beta');
-
-#Plot 3 for the Twiss parameter Alpha.
-
-ax[0,2].plot(y_test[:,2],mlpredict[:,2],'.');
-ax[0,2].set_xlabel('True alpha');
-ax[0,2].set_ylabel('Fitted alpha');
-
-#The final 3 plots determine the ratio of the 3 neural network outputs
-#against the outputs that the neural network generated using the test sample
-#which was not used during network training.
-
-ratioEmittance = np.divide(y_test[:,0],mlpredict[:,0]);
-ax[1,0].hist(ratioEmittance,bins=np.linspace(0.8,1.2,num=20));
-ax[1,0].set_xlabel('True/fitted emittance');
-ax[1,0].set_ylabel('Number of cases');
-
-ratioBeta = np.divide(y_test[:,1],mlpredict[:,1]);
-ax[1,1].hist(ratioBeta,bins=np.linspace(0.8,1.2,num=20));
-ax[1,1].set_xlabel('True/fitted beta');
-ax[1,1].set_ylabel('Number of cases');
-
-ratioAlpha = np.divide(y_test[:,2],mlpredict[:,2]);
-ax[1,2].hist(ratioAlpha,bins=np.linspace(0.5,1.5,num=20));
-ax[1,2].set_xlabel('True/fitted alpha');
-ax[1,2].set_ylabel('Number of cases');
+for i in range(6):
+    sub = fig.add_subplot(2, 6, i + 1)
+    sub.imshow(y_test[test_set[0]+i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    plt.yticks([])
+    sub = fig.add_subplot(2, 6, i + 7)
+    sub.imshow(mlpredict[i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    plt.yticks([])
+    
+#The foor loop again generates 12 images in 1 figure in a 2x6 arrangment.
+#This time after training the lower images don't look like noise.
+#They now strongly resemble the original sinograms made in MATLAB.
 
 ##############################################################################
-#End 10/12 Post Model Predictions and Imaging
+#End 10/14 Post Model Imaging
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#11/12 Parameter Calculations
+#11/14 Second Model Compiler
 ##############################################################################
 
-#The final part of the code is comprised of print statements determining the 
-#values of the three calculated parameters. Numpys mean and standard deviation
-#functions are used to determine the means of these values and their associated
-#errors.
+#A second moedel.compile function to configure the model for training with the
+#adam optimiser and a user defined learning rate and loss function.
 
-print(f'Mean of true/fitted emittance = {np.mean(ratioEmittance):.3f}')
-print(f'Standard deviation of true/fitted emittance = {100*np.std(ratioEmittance):.2f}%')
-print()
-print(f'Mean of true/fitted beta = {np.mean(ratioBeta):.3f}')
-print(f'Standard deviation of true/fitted beta = {100*np.std(ratioBeta):.2f}%')
-print()
-print(f'Mean of true/fitted alpha = {np.mean(ratioAlpha):.3f}')
-print(f'Standard deviation of true/fitted alpha = {100*np.std(ratioAlpha):.2f}%')
+linear_model.compile(
+    optimizer=tf.optimizers.Adam(learning_rate=0.1e-3),
+    loss='mean_squared_error')
 
 ##############################################################################
-#End 11/12 Parameter Calculations
+#End 11/14 Second Model Compiler
 ##############################################################################
 #
 #
 #
 ##############################################################################
-#12/12 Notes and Thoughts
+#12/14 Running The Second Model
+##############################################################################
+
+#The model.fit function begins the training of the second model. 
+
+#The number of itterations is set to 20 with a batch size per epoch of 20
+#which should yield an even faster training cycle than the previous network.
+
+#Most likely 2 networks is this code to test the justification for 10 extra
+#epochs in the first model to conserve computational power.
+
+history = linear_model.fit(
+    x_train, y_train, 
+    epochs=20,
+    batch_size=20,
+    # suppress logging
+    verbose=1,
+    
+#Verbose=1 to show progress animations without excessive logging readout.
+
+    # Calculate validation results on 20% of the training data
+    validation_split = 0.2)
+
+#20% validation split so 600 units of the 3000 large train data set is used
+#to validate this supervised learning neural network. This split is optimal as
+#the test data has already been removed prior to this split essentially
+#yielding two independent validations from which to monitor the networks
+#performance.
+
+##############################################################################
+#End 12/14 Running The Second Model
+##############################################################################
+#
+#
+#
+##############################################################################
+#13/14 Second Model Post Imaging
+##############################################################################
+
+test_set = 100 + np.arange(6);
+
+#Using np.arrange to take integer values from 100 to 105 so testing different
+#samples from earlier.
+
+mlpredict = linear_model.predict(x_test[test_set])
+fig = plt.figure(figsize=(16,5))
+
+#Make a plot with a 16x5 aspect ratio.
+
+for i in range(6):
+    sub = fig.add_subplot(2, 6, i + 1)
+    sub.imshow(y_test[test_set[0]+i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    plt.yticks([])
+    sub = fig.add_subplot(2, 6, i + 7)
+    sub.imshow(mlpredict[i,:].reshape(48,48), interpolation='nearest')
+    plt.xticks([])
+    
+#The foor loop again generates 12 images in 1 figure in a 2x6 arrangment.
+#This time after training the lower images don't look like noise.
+#They now strongly resemble the original sinograms made in MATLAB.
+
+#These plots can be compared and contrasted to the plots from the previous
+#figure to see if there are more artefacts in a figure generated through
+#20 cycles as opposed to 30.
+
+##############################################################################
+#End 13/14 Second Model Post Imaging
+##############################################################################
+#
+#
+#
+##############################################################################
+#14/14 Notes
 ##############################################################################
 '''
 Text
 '''
 ##############################################################################
-#End 12/12 Notes and Thoughts
+#End 14/14 Notes
 ##############################################################################
