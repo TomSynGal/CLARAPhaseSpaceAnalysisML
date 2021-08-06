@@ -23,7 +23,9 @@ def MakePhaseSpace(alphaX, betaX, epsilonX, phaseResolution):
     
     gammaX = (1 + np.square(alphaX)) / betaX
     
-    phaseRange = 3*np.sqrt(betaX*epsilonX)
+    inTheBracket = betaX*epsilonX
+    phaseRange = np.sqrt(inTheBracket)
+    phaseRange = 3*phaseRange
 
     covarMatx = np.array([[betaX, -alphaX],[-alphaX, gammaX]])
     
@@ -70,15 +72,18 @@ def MakeSinogram(alphaX, betaX, epsilonX, phaseResolution, projections):
     
     phaseSpaceX = MakePhaseSpace(alphaX, betaX, epsilonX, phaseResolution)
     
-    sinogram = np.zeros([projections, phaseResolution])
+    sinogram = np.zeros((projections, phaseResolution))
   
     for i in range(projections):
      
         angle = (i-1)*180/projections
         
-        rotatedImage = ndimage.rotate(phaseSpaceX, angle, reshape=False)
+        rotatedImage = ndimage.rotate(phaseSpaceX, angle, reshape=False, order=1)
         
-        slicedImageProjection = rotatedImage.sum(axis=1)
+        slicedImageProjection = rotatedImage.sum(axis=1)       
+        
+        #This didn't help the situation at all.
+        #slicedImageProjection = np.exp(slicedImageProjection)
         
         sinogram[i] = slicedImageProjection
         
@@ -119,7 +124,7 @@ def MakeTrainingImages(alphaX, betaX, epsilonX, phaseResolution,
         singleSinogram = MakeSinogram(A, B, E, phaseResolution, projections)
     
         Xdata[i*projections:(i+1)*projections, :] = singleSinogram
-    
+       
     return Xdata, Ydata
     
 

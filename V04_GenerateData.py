@@ -41,6 +41,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow
 import keras
+import h5py
+from numpy.linalg import inv
 from V04_Functions import MakePhaseSpace, MakeSinogram, ArrayHeatMapPlot
 from V04_Functions import MakeTrainingImages
 
@@ -68,13 +70,15 @@ alphaX = -0.2
 
 betaX = 1.5
 
-epsilonX = 1.0
+epsilonX = 1.0#E-06
+
+#epsilonX2 = 1.0
 
 phaseResolution = 48
 
 projections = 24
 
-samples = 6000
+samples = 8000
 
 ##############################################################################
 #End 04/XX Global Parameters
@@ -105,20 +109,63 @@ xData, yData = MakeTrainingImages(alphaX, betaX, epsilonX, phaseResolution,
 
 Xdata = np.zeros((projections*samples, phaseResolution))
 
-Ydata =([alphaX, betaX, epsilonX])*(0.2+1.6*(np.random.rand(samples,3)))
+
+#Old method
+##########################################################################
+#Ydata =([epsilonX, betaX, alphaX])*(0.2+1.6*(np.random.rand(samples,3)))
+##########################################################################
+
+#New method more in-line with the MATLAB way.
+##################################################
+Ydata = np.array([epsilonX, betaX, alphaX])
+Ydata = np.diag(Ydata)
+MatX = 0.2+1.6*(np.random.rand(3, samples))
+Ydata = np.matmul(Ydata, MatX)
+Ydata = Ydata.transpose()
+##################################################
+
 
 for i in range (samples):
     
-    A = Ydata[i,0]
+    print('Run Number')
+    print(i)
+    
+    E = Ydata[i,0]
     B = Ydata[i,1]
-    E = Ydata[i,2]
+    A = Ydata[i,2]
 
     singleSinogram = MakeSinogram(A, B, E, phaseResolution, projections)
     
     Xdata[i*projections:(i+1)*projections, :] = singleSinogram
     
+Xdata = Xdata*1000
+Xdata = Xdata.round(decimals=0)
+
+
+#Conventional Save
+############################################### 
+'''   
 np.savetxt('Xdata.txt', Xdata, delimiter=',')
 
 np.savetxt('Ydata.txt', Ydata, delimiter=',')
-    
+'''
+###############################################
+
+#HDF5 Save
+##############################################################################
+
+#with h5py.File('C:\Users\thoma\Documents\Daresbury Placement August 2021\Phase 2\RunProgramV04', 'w') as hdf:
+#    hdf.create_dataset('Xdata', data = Xdata)
+#    hdf.create_dataset('Ydata', data = Ydata)
+
+##############################################################################
+
+#HDF5 Save
+##############################################################################
+h5f = h5py.File('data.hf', 'w')
+h5f.create_dataset('Xdata', data = Xdata)
+h5f.create_dataset('Ydata', data = Ydata)
+##############################################################################
+
+
 ##############################################################################
