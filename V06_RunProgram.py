@@ -109,7 +109,7 @@ testSamplesT = 500 #(Must be less than samples)
 # XX/XX Generate New Training Data.
 ##############################################################################
 
-if DoQuadScan
+if DoQuadScan:
 
     if GenerateNewData:
         
